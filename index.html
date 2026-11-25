@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GHOST LINK // ORBITAL COMMAND</title>
+<title>GHOST LINK // SECURE TERMINAL</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,363 +12,153 @@
 
 <style>
   *, *::before, *::after { box-sizing: border-box; }
-
   :root {
-    --bg:          #04070c;
-    --panel:       rgba(9, 17, 26, .88);
-    --line:        rgba(0, 229, 255, .16);
-    --cyan:        #00e5ff;
-    --green:       #39ff9e;
-    --amber:       #ffb020;
-    --red:         #ff4d6d;
-    --text:        #9fc0d2;
-    --dim:         #4c6b7d;
-    --font-hud:    'Share Tech Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-    --font-title:  'Orbitron', system-ui, sans-serif;
+    --bg: #010603; --panel: rgba(3,16,8,.9); --line: rgba(0,255,65,.18);
+    --acc: #00ff41; --green: #7dffa8; --amber: #ffcc00; --red: #ff3355;
+    --text: #9fe8b6; --dim: #2f6b45;
+    --font-hud: 'Share Tech Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-title: 'Orbitron', system-ui, sans-serif;
   }
-
   html, body { height: 100%; margin: 0; }
-
   body {
-    background:
-      radial-gradient(1200px 700px at 15% -10%, rgba(0, 140, 190, .18), transparent 60%),
-      radial-gradient(900px 600px at 95% 110%, rgba(0, 255, 180, .09), transparent 60%),
-      var(--bg);
-    color: var(--text);
-    font-family: var(--font-hud);
-    font-size: 13px;
-    overflow: hidden;
-    -webkit-font-smoothing: antialiased;
+    background: radial-gradient(1200px 700px at 15% -10%, rgba(0,255,65,.10), transparent 60%),
+                radial-gradient(900px 600px at 95% 110%, rgba(0,255,65,.06), transparent 60%), var(--bg);
+    color: var(--text); font-family: var(--font-hud); font-size: 13px; overflow: hidden;
   }
-
   body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 9999;
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
     background: repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
-    opacity: .35;
-    mix-blend-mode: multiply;
+    opacity: .35; mix-blend-mode: multiply;
   }
-
-  .app {
-    height: 100vh;
-    display: grid;
-    grid-template-rows: auto 1fr;
-    gap: 12px;
-    padding: 12px;
-  }
-
-  main {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    gap: 12px;
-    min-height: 0;
-  }
-
-  .side {
-    display: grid;
-    grid-template-rows: auto auto 1fr;
-    gap: 12px;
-    min-height: 0;
-  }
-
+  .app { height: 100vh; display: grid; grid-template-rows: auto 1fr; gap: 12px; padding: 12px; }
+  main { display: grid; grid-template-columns: minmax(0,1fr) 340px; gap: 12px; min-height: 0; }
+  .side { display: grid; grid-template-rows: auto auto 1fr; gap: 12px; min-height: 0; }
   .panel {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    box-shadow: inset 0 0 60px rgba(0, 229, 255, .045), 0 0 24px rgba(0, 0, 0, .55);
+    position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+    background: var(--panel); border: 1px solid var(--line);
+    box-shadow: inset 0 0 60px rgba(0,255,65,.05), 0 0 24px rgba(0,0,0,.55);
     backdrop-filter: blur(4px);
   }
-
   .panel::before, .panel::after {
-    content: '';
-    position: absolute;
-    width: 14px; height: 14px;
-    border: 1px solid var(--cyan);
-    opacity: .75;
-    pointer-events: none;
-    z-index: 30;
+    content: ''; position: absolute; width: 14px; height: 14px; border: 1px solid var(--acc); opacity: .75; pointer-events: none; z-index: 30;
   }
   .panel::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
-  .panel::after  { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
-
+  .panel::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
   .panel-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 9px 12px;
-    border-bottom: 1px solid var(--line);
-    background: linear-gradient(90deg, rgba(0, 229, 255, .08), transparent 70%);
-    flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 12px;
+    border-bottom: 1px solid var(--line); background: linear-gradient(90deg, rgba(0,255,65,.08), transparent 70%);
   }
-
-  .title {
-    font-family: var(--font-title);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .22em;
-    text-transform: uppercase;
-    color: var(--cyan);
-    text-shadow: 0 0 12px rgba(0, 229, 255, .55);
-  }
-
-  .meta { font-size: 10px; letter-spacing: .14em; color: var(--dim); white-space: nowrap; }
-
-  .topbar {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    padding: 11px 18px;
-  }
-
+  .title { font-family: var(--font-title); font-size: 10px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--acc); text-shadow: 0 0 12px rgba(0,255,65,.7); }
+  .meta { font-size: 10px; letter-spacing: .14em; color: var(--dim); }
+  .topbar { flex-direction: row; align-items: center; justify-content: space-between; padding: 11px 18px; }
   .brand { display: flex; align-items: center; gap: 16px; }
-
-  .logo {
-    width: 24px; height: 24px;
-    border: 1px solid var(--cyan);
-    transform: rotate(45deg);
-    position: relative;
-    box-shadow: 0 0 16px rgba(0, 229, 255, .55), inset 0 0 12px rgba(0, 229, 255, .3);
-  }
-  .logo::after {
-    content: '';
-    position: absolute;
-    inset: 7px;
-    background: var(--cyan);
-    box-shadow: 0 0 10px var(--cyan);
-  }
-
-  .brand h1 {
-    margin: 0;
-    font-family: var(--font-title);
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: .3em;
-    color: #dff6ff;
-    text-shadow: 0 0 18px rgba(0, 229, 255, .6);
-  }
-  .brand p {
-    margin: 3px 0 0;
-    font-size: 9.5px;
-    letter-spacing: .22em;
-    color: var(--dim);
-  }
-
-  .status-row {
-    display: flex;
-    align-items: center;
-    gap: 22px;
-    font-size: 10.5px;
-    letter-spacing: .14em;
-    color: var(--dim);
-  }
+  .logo { width: 24px; height: 24px; border: 1px solid var(--acc); transform: rotate(45deg); position: relative; box-shadow: 0 0 16px rgba(0,255,65,.65), inset 0 0 12px rgba(0,255,65,.35); }
+  .logo::after { content: ''; position: absolute; inset: 7px; background: var(--acc); box-shadow: 0 0 10px var(--acc); }
+  .brand h1 { margin: 0; font-family: var(--font-title); font-size: 14px; font-weight: 700; letter-spacing: .3em; color: #d9ffe4; text-shadow: 0 0 18px rgba(0,255,65,.7); }
+  .brand p { margin: 3px 0 0; font-size: 9.5px; letter-spacing: .22em; color: var(--dim); }
+  .status-row { display: flex; align-items: center; gap: 22px; font-size: 10.5px; letter-spacing: .14em; color: var(--dim); }
   .status { display: flex; align-items: center; white-space: nowrap; }
-  .status b { color: var(--cyan); font-weight: 400; margin-left: 8px; }
-
-  .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 9px var(--green);
-    display: inline-block;
-    margin-right: 8px;
-    animation: pulse 2s ease-in-out infinite;
-  }
-  .dot.sharing { background: var(--cyan); box-shadow: 0 0 9px var(--cyan); }
+  .status b { color: var(--acc); font-weight: 400; margin-left: 8px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 9px var(--green); display: inline-block; margin-right: 8px; animation: pulse 2s ease-in-out infinite; }
+  .dot.sharing { background: var(--acc); box-shadow: 0 0 9px var(--acc); }
   .dot.paused { background: var(--amber); box-shadow: 0 0 9px var(--amber); }
   .dot.error { background: var(--red); box-shadow: 0 0 9px var(--red); }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
-
-  .map-wrap {
-    position: relative;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-    background: #030810;
-  }
-
-  #map { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; background: #030810; }
-
-  .map-wrap.mode-sat .leaflet-tile-pane { filter: saturate(.85) contrast(1.08) brightness(.8); }
-  .map-wrap.mode-vec .leaflet-tile-pane { filter: none; }
-
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.25 } }
+  .map-wrap { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #000a04; }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; background: #000a04; }
   .map-wrap::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    pointer-events: none;
-    background:
-      repeating-linear-gradient(0deg, rgba(0, 229, 255, .035) 0 1px, transparent 1px 3px),
-      repeating-linear-gradient(90deg, rgba(0, 229, 255, .025) 0 1px, transparent 1px 80px);
+    content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0,255,65,.04) 0 1px, transparent 1px 3px),
+                repeating-linear-gradient(90deg, rgba(0,255,65,.03) 0 1px, transparent 1px 80px);
     mix-blend-mode: screen;
   }
-
-  .radar-sweep {
-    position: absolute; inset: 0; z-index: 3; pointer-events: none;
-    overflow: hidden; display: grid; place-items: center;
-  }
+  .radar-sweep { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; display: grid; place-items: center; }
   .radar-arm {
     width: 160vmax; height: 160vmax; border-radius: 50%;
-    background: conic-gradient(from 0deg, rgba(0, 229, 255, .18), rgba(0, 229, 255, .04) 22deg, transparent 58deg, transparent 360deg);
+    background: conic-gradient(from 0deg, rgba(0,255,65,.20), rgba(0,255,65,.05) 22deg, transparent 58deg, transparent 360deg);
     -webkit-mask-image: radial-gradient(circle, #000 28%, transparent 66%);
     mask-image: radial-gradient(circle, #000 28%, transparent 66%);
     animation: spin 10s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  .search-container {
-    position: absolute; top: 14px; left: 14px; right: 14px; z-index: 10; display: flex; gap: 8px;
-  }
+  .search-container { position: absolute; top: 14px; left: 14px; right: 14px; z-index: 10; display: flex; gap: 8px; }
   .search-box {
-    flex: 1; display: flex; align-items: center;
-    background: rgba(4, 12, 20, .88);
-    border: 1px solid rgba(0, 229, 255, .4);
-    box-shadow: 0 0 18px rgba(0, 229, 255, .2), inset 0 0 20px rgba(0, 229, 255, .04);
-    backdrop-filter: blur(6px);
+    flex: 1; display: flex; align-items: center; background: rgba(0,10,4,.88);
+    border: 1px solid rgba(0,255,65,.45); box-shadow: 0 0 18px rgba(0,255,65,.22);
     padding: 0 12px; height: 40px;
   }
-  .search-box input {
-    flex: 1; background: transparent; border: 0; outline: 0;
-    color: #dff6ff; font-family: var(--font-hud); font-size: 13px; letter-spacing: .06em;
-  }
-  .search-box input::placeholder { color: rgba(0, 229, 255, .45); letter-spacing: .08em; }
-  .search-box button {
-    background: transparent; border: 0; color: var(--cyan); font-size: 16px; cursor: pointer; padding: 0 4px;
-    text-shadow: 0 0 10px var(--cyan);
-  }
+  .search-box input { flex: 1; background: transparent; border: 0; outline: 0; color: #d9ffe4; font-family: var(--font-hud); font-size: 13px; }
+  .search-box input::placeholder { color: rgba(0,255,65,.45); }
+  .search-box button { background: transparent; border: 0; color: var(--acc); font-size: 16px; cursor: pointer; }
   .search-results {
     position: absolute; top: 58px; left: 14px; right: 14px; z-index: 11;
-    background: rgba(4, 12, 20, .96);
-    border: 1px solid rgba(0, 229, 255, .3);
-    box-shadow: 0 0 30px rgba(0, 0, 0, .7), 0 0 20px rgba(0, 229, 255, .1);
+    background: rgba(0,10,4,.96); border: 1px solid rgba(0,255,65,.35);
     max-height: 220px; overflow-y: auto; display: none;
   }
   .search-results.active { display: block; }
-  .search-result-item {
-    padding: 9px 14px; border-bottom: 1px solid rgba(0, 229, 255, .08);
-    cursor: pointer; font-size: 12px; letter-spacing: .03em; color: #b8d4e4;
-  }
-  .search-result-item:hover { background: rgba(0, 229, 255, .1); color: #fff; }
-  .search-result-item .sr-title { color: var(--cyan); display: block; margin-bottom: 2px; }
+  .search-result-item { padding: 9px 14px; border-bottom: 1px solid rgba(0,255,65,.1); cursor: pointer; font-size: 12px; color: #a8f0bd; }
+  .search-result-item:hover { background: rgba(0,255,65,.12); color: #fff; }
+  .search-result-item .sr-title { color: var(--acc); display: block; margin-bottom: 2px; }
   .search-result-item .sr-sub { font-size: 10px; color: var(--dim); }
-
-  .layer-switch { display: flex; gap: 5px; }
-  .layer-switch button {
-    font-family: var(--font-hud); font-size: 9px; letter-spacing: .16em; color: var(--dim);
-    background: rgba(0, 229, 255, .04); border: 1px solid rgba(0, 229, 255, .18);
-    padding: 3px 7px; cursor: pointer; transition: all .18s ease;
-  }
-  .layer-switch button:hover { color: var(--cyan); border-color: rgba(0, 229, 255, .5); }
-  .layer-switch button.active {
-    color: #041018; background: var(--cyan); border-color: var(--cyan);
-    box-shadow: 0 0 14px rgba(0, 229, 255, .7);
-  }
-
   .map-readout {
     position: absolute; left: 14px; bottom: 12px; z-index: 10;
-    font-size: 11px; letter-spacing: .1em; color: rgba(0, 229, 255, .85);
-    text-shadow: 0 0 10px rgba(0, 229, 255, .5); pointer-events: none; line-height: 1.7;
+    font-size: 11px; letter-spacing: .1em; color: rgba(0,255,65,.9); text-shadow: 0 0 10px rgba(0,255,65,.6);
   }
-  .map-readout .dim { color: var(--dim); font-size: 9.5px; letter-spacing: .16em; text-shadow: none; }
-
+  .map-readout .dim { color: var(--dim); font-size: 9.5px; }
   .compass { padding: 10px 12px 14px; display: grid; place-items: center; }
-  .compass svg { width: 100%; max-width: 190px; height: auto; display: block; }
-  .c-ring  { fill: none; stroke: rgba(0, 229, 255, .28); stroke-width: 1; }
-  .c-ring2 { fill: none; stroke: rgba(0, 229, 255, .14); stroke-width: 1; stroke-dasharray: 2 5; }
-  .c-tick  { stroke: rgba(0, 229, 255, .45); stroke-width: 1; }
-  .c-tick-major { stroke: rgba(0, 229, 255, .9); stroke-width: 1.6; }
-  .cardinal { fill: rgba(0, 229, 255, .9); font-family: var(--font-hud); font-size: 11px; letter-spacing: .1em; text-anchor: middle; }
+  .compass svg { width: 100%; max-width: 190px; height: auto; }
+  .c-ring { fill: none; stroke: rgba(0,255,65,.3); stroke-width: 1; }
+  .c-ring2 { fill: none; stroke: rgba(0,255,65,.15); stroke-width: 1; stroke-dasharray: 2 5; }
+  .c-tick { stroke: rgba(0,255,65,.5); stroke-width: 1; }
+  .c-tick-major { stroke: rgba(0,255,65,.95); stroke-width: 1.6; }
+  .cardinal { fill: rgba(0,255,65,.95); font-family: var(--font-hud); font-size: 11px; text-anchor: middle; }
   .cardinal.n { fill: var(--amber); }
   #needle { transform-box: view-box; transform-origin: 100px 100px; }
-  .n-needle { fill: rgba(255, 90, 110, .92); filter: drop-shadow(0 0 6px rgba(255, 90, 110, .8)); }
-  .s-needle { fill: rgba(0, 229, 255, .55); }
-  .hub { fill: #041018; stroke: rgba(0, 229, 255, .8); stroke-width: 1.2; }
-
+  .n-needle { fill: rgba(255,51,85,.92); filter: drop-shadow(0 0 6px rgba(255,51,85,.8)); }
+  .s-needle { fill: rgba(0,255,65,.6); }
+  .hub { fill: #001208; stroke: rgba(0,255,65,.9); stroke-width: 1.2; }
   .share-panel { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
   .share-controls { display: flex; gap: 6px; flex-wrap: wrap; }
   .share-controls button {
-    flex: 1; min-width: 70px; padding: 8px 10px;
-    font-family: var(--font-hud); font-size: 11px; letter-spacing: .12em;
-    background: rgba(0, 229, 255, .08); border: 1px solid rgba(0, 229, 255, .3);
-    color: var(--cyan); cursor: pointer; transition: all .15s;
+    flex: 1; min-width: 70px; padding: 8px 10px; font-family: var(--font-hud); font-size: 11px; letter-spacing: .12em;
+    background: rgba(0,255,65,.08); border: 1px solid rgba(0,255,65,.3); color: var(--acc); cursor: pointer;
   }
-  .share-controls button:hover { background: rgba(0, 229, 255, .18); }
+  .share-controls button:hover { background: rgba(0,255,65,.18); }
   .share-controls button:disabled { opacity: .4; cursor: not-allowed; }
-  .share-controls button.primary { background: var(--cyan); color: #041018; border-color: var(--cyan); font-weight: 700; }
+  .share-controls button.primary { background: var(--acc); color: #041018; border-color: var(--acc); font-weight: 700; }
   .share-controls button.danger { background: var(--red); color: white; border-color: var(--red); }
   .share-controls button.warning { background: var(--amber); color: #041018; border-color: var(--amber); }
-
   #share-link {
-    display: none; background: rgba(0, 229, 255, .08); border: 1px solid rgba(0, 229, 255, .3);
-    padding: 8px; font-size: 11px; word-break: break-all; color: var(--cyan); cursor: pointer;
-    letter-spacing: .04em;
+    display: none; background: rgba(0,255,65,.08); border: 1px solid rgba(0,255,65,.3);
+    padding: 8px; font-size: 11px; word-break: break-all; color: var(--acc); cursor: pointer;
   }
-  #share-link:hover { background: rgba(0, 229, 255, .15); }
-  #message { font-size: 11px; min-height: 16px; color: var(--amber); letter-spacing: .06em; }
-
-  .leaflet-container { background: #030810; font-family: var(--font-hud); }
-  .leaflet-control-attribution {
-    background: rgba(4, 12, 20, .7) !important; color: var(--dim) !important;
-    font-size: 9px !important; letter-spacing: .05em;
-  }
-  .leaflet-control-attribution a { color: var(--cyan) !important; }
-  .leaflet-control-zoom a {
-    background: rgba(4, 12, 20, .88) !important; color: var(--cyan) !important;
-    border: 1px solid rgba(0, 229, 255, .3) !important; text-shadow: 0 0 8px var(--cyan);
-  }
-  .leaflet-control-zoom a:hover { background: rgba(0, 229, 255, .15) !important; }
-  .custom-marker {
-    width: 14px; height: 14px; border-radius: 50%;
-    background: var(--cyan); box-shadow: 0 0 16px var(--cyan), 0 0 32px rgba(0, 229, 255, .5);
-    border: 2px solid rgba(255, 255, 255, .7);
-  }
-  .leaflet-popup-content-wrapper {
-    background: rgba(4, 12, 20, .95); color: #dff6ff;
-    border: 1px solid rgba(0, 229, 255, .4); border-radius: 2px;
-    box-shadow: 0 0 24px rgba(0, 229, 255, .25);
-  }
-  .leaflet-popup-tip { background: rgba(4, 12, 20, .95); }
-  .leaflet-popup-content { font-family: var(--font-hud); font-size: 11.5px; }
-
+  #share-link:hover { background: rgba(0,255,65,.15); }
+  #message { font-size: 11px; min-height: 16px; color: var(--amber); }
+  .leaflet-container { background: #000a04; font-family: var(--font-hud); }
+  .leaflet-control-zoom a { background: rgba(0,10,4,.9) !important; color: var(--acc) !important; border: 1px solid rgba(0,255,65,.35) !important; }
+  .custom-marker { width: 14px; height: 14px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 16px var(--acc); border: 2px solid rgba(255,255,255,.7); }
+  .leaflet-popup-content-wrapper { background: rgba(0,10,4,.96); color: #d9ffe4; border: 1px solid rgba(0,255,65,.45); border-radius: 2px; }
+  .leaflet-popup-tip { background: rgba(0,10,4,.96); }
   .viewer-banner {
-    display: none; position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
-    z-index: 1000; background: rgba(0, 229, 255, .9); color: #041018;
-    padding: 6px 14px; font-size: 12px; font-weight: 700; letter-spacing: .14em;
+    display: none; position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 1000;
+    background: rgba(0,255,65,.9); color: #041018; padding: 6px 14px; font-size: 12px; font-weight: 700; letter-spacing: .14em;
   }
   body.viewer-mode .share-panel, body.viewer-mode .search-container { display: none; }
   body.viewer-mode .viewer-banner { display: block; }
-
   @media (max-width: 980px) {
-    body { overflow: auto; }
-    .app { height: auto; min-height: 100vh; }
-    main { grid-template-columns: 1fr; }
-    .map-panel { min-height: 480px; }
-    .status-row { gap: 14px; font-size: 9.5px; }
-    .brand h1 { font-size: 11px; letter-spacing: .2em; }
-  }
-  @media (max-width: 560px) {
-    .status-row .status:first-child { display: none; }
-    .app { padding: 8px; gap: 8px; }
+    body { overflow: auto; } .app { height: auto; min-height: 100vh; } main { grid-template-columns: 1fr; }
+    .map-panel { min-height: 480px; } .status-row { gap: 14px; font-size: 9.5px; } .brand h1 { font-size: 11px; }
   }
 </style>
 </head>
 <body>
-
-<div class="app">
+<div class="app" id="appRoot">
   <header class="panel topbar">
     <div class="brand">
-      <div class="logo" aria-hidden="true"></div>
+      <div class="logo"></div>
       <div>
         <h1>GHOST LINK</h1>
-        <p>ORBITAL COMMAND · LOCATION UPLINK</p>
+        <p>SECURE TERMINAL · LOCATION UPLINK</p>
       </div>
     </div>
     <div class="status-row">
@@ -377,17 +167,13 @@
       <span class="status">UTC <b id="clock">--:--:--</b></span>
     </div>
   </header>
-
   <main>
     <section class="panel map-panel">
       <div class="panel-head">
         <span class="title">World Map</span>
-        <div class="layer-switch" id="layerSwitch">
-          <button data-key="sat" class="active">SAT</button>
-          <button data-key="vec">VECTOR</button>
-        </div>
+        <span class="meta">VECTOR</span>
       </div>
-      <div class="map-wrap mode-sat" id="mapWrap">
+      <div class="map-wrap" id="mapWrap">
         <div id="map"></div>
         <div class="radar-sweep"><div class="radar-arm"></div></div>
         <div class="search-container">
@@ -399,13 +185,11 @@
         <div class="search-results" id="searchResults"></div>
         <div class="map-readout">
           <div id="coordLine">LAT 00.000° · LON 00.000°</div>
-          <div class="dim" id="sourceLine">KEYLESS TILES · SCROLL TO ZOOM</div>
+          <div class="dim" id="sourceLine">VECTOR DATA · TOPOJSON</div>
         </div>
       </div>
     </section>
-
     <aside class="side">
-      <!-- Share Control Panel -->
       <div class="panel">
         <div class="panel-head">
           <span class="title">Link Control</span>
@@ -418,12 +202,10 @@
             <button id="btn-resume" class="primary" disabled>RESUME</button>
             <button id="btn-stop" class="danger" disabled>STOP</button>
           </div>
-          <div id="share-link" title="Click to copy"></div>
-          <div id="message">Awaiting uplink authorization.</div>
+          <div id="share-link"></div>
+          <div id="message">Awaiting authorization.</div>
         </div>
       </div>
-
-      <!-- Digital Compass -->
       <div class="panel compass-card">
         <div class="panel-head">
           <span class="title">Digital Compass</span>
@@ -442,28 +224,16 @@
           </svg>
         </div>
       </div>
-
-      <!-- Environment (decorative) -->
       <div class="panel">
-        <div class="panel-head">
-          <span class="title">Environment</span>
-          <span class="meta">TELEMETRY</span>
-        </div>
-        <div class="stats" style="display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line);">
-          <div class="stat" style="background:rgba(6,12,20,.92); padding:9px 12px;">
-            <span class="stat-label" style="font-size:9.5px; letter-spacing:.2em; color:var(--dim);">TEMP</span>
-            <div class="stat-value" style="font-family:var(--font-title); font-size:19px; color:#dff6ff;"><span id="temp">21.4</span><em style="font-size:10px; color:var(--cyan);">°C</em></div>
-          </div>
-          <div class="stat" style="background:rgba(6,12,20,.92); padding:9px 12px;">
-            <span class="stat-label" style="font-size:9.5px; letter-spacing:.2em; color:var(--dim);">WIND</span>
-            <div class="stat-value" style="font-family:var(--font-title); font-size:19px; color:#dff6ff;"><span id="wind">12.6</span><em style="font-size:10px; color:var(--cyan);">m/s</em></div>
-          </div>
+        <div class="panel-head"><span class="title">Environment</span><span class="meta">TELEMETRY</span></div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); padding:1px;">
+          <div style="background:rgba(2,12,6,.94); padding:9px 12px;"><span style="font-size:9.5px; letter-spacing:.2em; color:var(--dim);">TEMP</span><div style="font-family:var(--font-title); font-size:19px; color:#d9ffe4;"><span id="temp">21.4</span><em style="font-size:10px; color:var(--acc);">°C</em></div></div>
+          <div style="background:rgba(2,12,6,.94); padding:9px 12px;"><span style="font-size:9.5px; letter-spacing:.2em; color:var(--dim);">WIND</span><div style="font-family:var(--font-title); font-size:19px; color:#d9ffe4;"><span id="wind">12.6</span><em style="font-size:10px; color:var(--acc);">m/s</em></div></div>
         </div>
       </div>
     </aside>
   </main>
 </div>
-
 <div class="viewer-banner" id="viewer-banner">VIEWING SHARED UPLINK</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -471,29 +241,20 @@
 <script>
 (function () {
   'use strict';
-
-  // ============================================================
-  // CONFIG — set your Cloudflare Worker URL here
-  // ============================================================
-  const API_BASE = '';
+  const API_BASE = ''; // set your Worker URL here
 
   const $ = (sel) => document.querySelector(sel);
+  const NS = 'http://www.w3.org/2000/svg';
 
   // Clock
   const clockEl = $('#clock');
   function tickClock() { clockEl.textContent = new Date().toISOString().slice(11, 19); }
   tickClock(); setInterval(tickClock, 1000);
 
-  // Map
-  const map = L.map('map', {
-    center: [20, 0], zoom: 2, minZoom: 2, maxZoom: 18,
-    zoomControl: true, attributionControl: true, worldCopyJump: true
-  });
-
-  const mapWrap = $('#mapWrap');
+  // Map (vector)
+  const map = L.map('map', { center: [20, 0], zoom: 2, minZoom: 2, maxZoom: 12, zoomControl: true, attributionControl: false, worldCopyJump: true });
   const coordLine = $('#coordLine');
   const sourceLine = $('#sourceLine');
-
   function updateCoords() {
     const c = map.getCenter();
     const latDir = c.lat >= 0 ? 'N' : 'S';
@@ -502,69 +263,34 @@
   }
   map.on('move', updateCoords); updateCoords();
 
-  const SAT_LAYER = {
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    options: { maxZoom: 19, attribution: 'Tiles &copy; Esri' }
-  };
-
-  let currentBase = null;
-  let vectorActive = false;
-  let vectorLayers = [];
-
-  function setModeClass(cls) { mapWrap.className = 'map-wrap ' + cls; }
-  function setButtons(key) {
-    document.querySelectorAll('#layerSwitch button').forEach(b => b.classList.toggle('active', b.dataset.key === key));
-  }
-
-  function setSat() {
-    if (vectorActive) {
-      vectorLayers.forEach(l => map.removeLayer(l));
-      vectorLayers = [];
-      vectorActive = false;
-    }
-    if (currentBase) { map.removeLayer(currentBase); currentBase = null; }
-    const layer = L.tileLayer(SAT_LAYER.url, SAT_LAYER.options).addTo(map);
-    currentBase = layer;
-    setModeClass('mode-sat');
-    setButtons('sat');
-    sourceLine.textContent = 'KEYLESS TILES · ESRI IMAGERY';
-  }
-
-  function enableVectorMode() {
-    if (vectorActive) return;
-    vectorActive = true;
-    if (currentBase) { map.removeLayer(currentBase); currentBase = null; }
-    setModeClass('mode-vec');
-    setButtons('vec');
-    sourceLine.textContent = 'VECTOR DATA · GRATICULE';
+  function initVectorMap() {
     const pane = map.getPane('vecPane') || map.createPane('vecPane');
     pane.style.zIndex = 350;
-    const style = { pane: 'vecPane', color: 'rgba(0,229,255,.18)', weight: 1, interactive: false };
-    for (let lon = -180; lon <= 180; lon += 30) vectorLayers.push(L.polyline([[-85, lon],[85, lon]], style).addTo(map));
+    const style = { pane: 'vecPane', color: 'rgba(0,255,65,.2)', weight: 1, interactive: false };
+    for (let lon = -180; lon <= 180; lon += 30) L.polyline([[-85, lon],[85, lon]], style).addTo(map);
     for (let lat = -60; lat <= 60; lat += 30) {
-      const s = lat === 0 ? { ...style, color: 'rgba(0,229,255,.45)', weight: 1.4 } : style;
-      vectorLayers.push(L.polyline([[lat, -180],[lat, 180]], s).addTo(map));
+      const s = lat === 0 ? { ...style, color: 'rgba(0,255,65,.5)', weight: 1.4 } : style;
+      L.polyline([[lat, -180],[lat, 180]], s).addTo(map);
     }
+    fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json')
+      .then(r => r.json())
+      .then(topo => {
+        const land = topojson.feature(topo, topo.objects.land);
+        L.geoJSON(land, { pane: 'vecPane', interactive: false, style: { color: 'rgba(0,255,65,.65)', weight: 1, fillColor: 'rgba(0,255,65,.08)', fillOpacity: 1 } }).addTo(map);
+        sourceLine.textContent = 'VECTOR DATA · TOPOJSON';
+      })
+      .catch(() => { sourceLine.textContent = 'VECTOR DATA UNAVAILABLE'; });
   }
-
-  document.querySelectorAll('#layerSwitch button').forEach(btn => {
-    btn.addEventListener('click', () => btn.dataset.key === 'vec' ? enableVectorMode() : setSat());
-  });
-  setSat();
+  initVectorMap();
 
   // Search
   const searchInput = $('#searchInput');
   const searchResults = $('#searchResults');
   let searchMarker = null;
   let searchTimeout = null;
-
-  searchInput.addEventListener('input', () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => performSearch(searchInput.value), 350);
-  });
+  searchInput.addEventListener('input', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(() => performSearch(searchInput.value), 350); });
   searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') performSearch(searchInput.value); });
   $('#searchBtn').addEventListener('click', () => performSearch(searchInput.value));
-
   async function performSearch(query) {
     if (!query || query.trim().length < 2) { searchResults.classList.remove('active'); return; }
     searchResults.innerHTML = '<div class="search-result-item"><span class="sr-title">SEARCHING…</span></div>';
@@ -573,17 +299,14 @@
       const res = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(query) + '&format=json&limit=5');
       const data = await res.json();
       searchResults.innerHTML = '';
-      if (!data.length) {
-        searchResults.innerHTML = '<div class="search-result-item"><span class="sr-title">NO RESULTS</span></div>';
-        return;
-      }
+      if (!data.length) { searchResults.innerHTML = '<div class="search-result-item"><span class="sr-title">NO RESULTS</span></div>'; return; }
       data.forEach(item => {
         const row = document.createElement('div');
         row.className = 'search-result-item';
         row.innerHTML = `<span class="sr-title">${item.display_name.split(',')[0]}</span><span class="sr-sub">${item.display_name}</span>`;
         row.addEventListener('click', () => {
           const lat = +item.lat, lon = +item.lon;
-          map.flyTo([lat, lon], 10, { duration: 1.6 });
+          map.flyTo([lat, lon], 8, { duration: 1.6 });
           if (searchMarker) map.removeLayer(searchMarker);
           const icon = L.divIcon({ className: '', html: '<div class="custom-marker"></div>', iconSize: [14,14], iconAnchor: [7,7] });
           searchMarker = L.marker([lat, lon], { icon }).addTo(map).bindPopup('<b>' + item.display_name + '</b>').openPopup();
@@ -592,15 +315,12 @@
         });
         searchResults.appendChild(row);
       });
-    } catch {
-      searchResults.innerHTML = '<div class="search-result-item"><span class="sr-title">SEARCH UNAVAILABLE</span></div>';
-    }
+    } catch { searchResults.innerHTML = '<div class="search-result-item"><span class="sr-title">SEARCH UNAVAILABLE</span></div>'; }
   }
   map.on('click', () => searchResults.classList.remove('active'));
 
-  // Compass (decorative animation)
+  // Compass
   const ticksGroup = document.getElementById('ticks');
-  const NS = 'http://www.w3.org/2000/svg';
   for (let i = 0; i < 72; i++) {
     const angle = (i * 5) * Math.PI / 180;
     const major = i % 9 === 0;
@@ -622,15 +342,13 @@
     t.textContent = label;
     ticksGroup.parentNode.insertBefore(t, ticksGroup.nextSibling);
   });
-
   const needle = document.getElementById('needle');
   const headingVal = document.getElementById('headingVal');
   let heading = 42, headingTarget = 42;
   setInterval(() => { headingTarget = (headingTarget + (Math.random() - 0.5) * 46 + 360) % 360; }, 2600);
   function animateNeedle() {
     let delta = headingTarget - heading;
-    if (delta > 180) delta -= 360;
-    if (delta < -180) delta += 360;
+    if (delta > 180) delta -= 360; if (delta < -180) delta += 360;
     heading = (heading + delta * 0.045 + 360) % 360;
     needle.style.transform = 'rotate(' + heading.toFixed(2) + 'deg)';
     headingVal.textContent = String(Math.round(heading)).padStart(3, '0') + '°';
@@ -638,7 +356,7 @@
   }
   requestAnimationFrame(animateNeedle);
 
-  // Environment telemetry (decorative)
+  // Environment
   const env = { temp: 21.4, wind: 12.6 };
   setInterval(() => {
     env.temp = Math.max(14, Math.min(34, env.temp + (Math.random() - 0.5) * 1.1));
@@ -647,15 +365,8 @@
     document.getElementById('wind').textContent = env.wind.toFixed(1);
   }, 2200);
 
-  // ============================================================
-  // GHOST LINK SHARING LOGIC
-  // ============================================================
-  let watchId = null;
-  let sharing = false;
-  let paused = false;
-  let shareId = null;
-  let shareToken = null;
-
+  // Ghost Link sharing
+  let watchId = null, sharing = false, paused = false, shareId = null, shareToken = null;
   const netDot = document.getElementById('net-dot');
   const netStatus = document.getElementById('net-status');
   const shareDot = document.getElementById('share-dot');
@@ -667,11 +378,9 @@
   const btnPause = document.getElementById('btn-pause');
   const btnResume = document.getElementById('btn-resume');
   const btnStop = document.getElementById('btn-stop');
-
   let userMarker = null;
 
   function setMessage(text) { messageEl.textContent = text; }
-
   function updateNetwork() {
     const online = navigator.onLine;
     netDot.className = 'dot' + (online ? '' : ' error');
@@ -683,20 +392,14 @@
 
   function updateShareUI() {
     if (!sharing) {
-      shareDot.className = 'dot';
-      shareStatus.textContent = 'STANDBY';
-      shareMeta.textContent = 'OFFLINE';
+      shareDot.className = 'dot'; shareStatus.textContent = 'STANDBY'; shareMeta.textContent = 'OFFLINE';
       btnStart.disabled = false; btnPause.disabled = true; btnResume.disabled = true; btnStop.disabled = true;
       shareLinkEl.style.display = 'none';
     } else if (paused) {
-      shareDot.className = 'dot paused';
-      shareStatus.textContent = 'PAUSED';
-      shareMeta.textContent = 'HOLD';
+      shareDot.className = 'dot paused'; shareStatus.textContent = 'PAUSED'; shareMeta.textContent = 'HOLD';
       btnStart.disabled = true; btnPause.disabled = true; btnResume.disabled = false; btnStop.disabled = false;
     } else {
-      shareDot.className = 'dot sharing';
-      shareStatus.textContent = 'ACTIVE';
-      shareMeta.textContent = 'LIVE';
+      shareDot.className = 'dot sharing'; shareStatus.textContent = 'ACTIVE'; shareMeta.textContent = 'LIVE';
       btnStart.disabled = true; btnPause.disabled = false; btnResume.disabled = true; btnStop.disabled = false;
     }
   }
@@ -705,90 +408,49 @@
     if (!userMarker) {
       const icon = L.divIcon({ className: '', html: '<div class="custom-marker"></div>', iconSize: [14,14], iconAnchor: [7,7] });
       userMarker = L.marker([lat, lng], { icon }).addTo(map).bindPopup('UPLINK POSITION');
-    } else {
-      userMarker.setLatLng([lat, lng]);
-    }
+    } else userMarker.setLatLng([lat, lng]);
     map.panTo([lat, lng], { animate: true });
   }
 
   async function api(path, options = {}) {
-    if (!API_BASE) throw new Error('API_BASE not configured');
-    const res = await fetch(API_BASE + path, {
-      ...options,
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
-    });
+    if (!API_BASE) throw new Error('API_BASE not set');
+    const res = await fetch(API_BASE + path, { ...options, headers: { 'Content-Type': 'application/json', ...(options.headers || {}) } });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   }
 
   async function startShareSession() {
-    if (!API_BASE) {
-      setMessage('Share links disabled. Set API_BASE in code.');
-      return null;
-    }
+    if (!API_BASE) { setMessage('Share links disabled. Set API_BASE.'); return null; }
     try {
       const data = await api('/api/share', { method: 'POST' });
-      shareId = data.id;
-      shareToken = data.token;
+      shareId = data.id; shareToken = data.token;
       const link = location.origin + location.pathname + '?view=' + shareId;
-      shareLinkEl.textContent = link;
-      shareLinkEl.style.display = 'block';
-      shareLinkEl.onclick = () => {
-        navigator.clipboard.writeText(link).then(() => setMessage('Link copied to clipboard.')).catch(() => setMessage('Copy failed.'));
-      };
-      setMessage('Share link ready. Click to copy.');
+      shareLinkEl.textContent = link; shareLinkEl.style.display = 'block';
+      shareLinkEl.onclick = () => navigator.clipboard.writeText(link).then(() => setMessage('Link copied.')).catch(() => setMessage('Copy failed.'));
+      setMessage('Share link ready.');
       return data;
-    } catch (err) {
-      setMessage('Failed to create share: ' + err.message);
-      return null;
-    }
+    } catch (err) { setMessage('Share failed: ' + err.message); return null; }
   }
 
   async function pushLocation(lat, lng) {
     if (!shareId || !shareToken || !API_BASE) return;
-    try {
-      await api('/api/share/' + shareId, {
-        method: 'POST',
-        body: JSON.stringify({ token: shareToken, lat, lng })
-      });
-    } catch (e) { console.warn('Push failed', e); }
+    try { await api('/api/share/' + shareId, { method: 'POST', body: JSON.stringify({ token: shareToken, lat, lng }) }); } catch (e) {}
   }
 
   function startWatching() {
     if (!navigator.geolocation) { setMessage('Geolocation not supported.'); return; }
     watchId = navigator.geolocation.watchPosition(
-      pos => {
-        if (!sharing || paused) return;
-        const lat = pos.coords.latitude, lng = pos.coords.longitude;
-        moveUserMarker(lat, lng);
-        pushLocation(lat, lng);
-      },
+      pos => { if (!sharing || paused) return; const lat = pos.coords.latitude, lng = pos.coords.longitude; moveUserMarker(lat, lng); pushLocation(lat, lng); },
       err => setMessage('GPS error: ' + err.message),
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
   }
+  function stopWatching() { if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; } }
 
-  function stopWatching() {
-    if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-  }
-
-  btnStart.onclick = async () => {
-    sharing = true; paused = false;
-    setMessage('Requesting location authorization…');
-    updateShareUI();
-    await startShareSession();
-    startWatching();
-  };
-  btnPause.onclick = () => { paused = true; setMessage('Uplink paused.'); updateShareUI(); };
-  btnResume.onclick = () => { paused = false; setMessage('Uplink resumed.'); updateShareUI(); };
-  btnStop.onclick = () => {
-    sharing = false; paused = false;
-    stopWatching();
-    shareId = null; shareToken = null;
-    shareLinkEl.style.display = 'none';
-    setMessage('Uplink terminated.');
-    updateShareUI();
-  };
+  btnStart.onclick = async () => { sharing = true; paused = false; setMessage('Requesting location…'); updateShareUI(); await startShareSession(); startWatching(); };
+  btnPause.onclick = () => { paused = true; setMessage('Paused.'); updateShareUI(); };
+  btnResume.onclick = () => { paused = false; setMessage('Resumed.'); updateShareUI(); };
+  btnStop.onclick = () => { sharing = false; paused = false; stopWatching(); shareId = null; shareToken = null; shareLinkEl.style.display = 'none'; setMessage('Stopped.'); updateShareUI(); };
 
   // Viewer mode
   const params = new URLSearchParams(location.search);
@@ -799,23 +461,15 @@
       if (!API_BASE) { setMessage('API not configured.'); return; }
       try {
         const data = await api('/api/share/' + viewId);
-        if (data && data.lat != null) {
-          moveUserMarker(data.lat, data.lng);
-          map.setView([data.lat, data.lng], Math.max(map.getZoom(), 12));
-          setMessage('Last contact: ' + new Date(data.updated).toLocaleTimeString());
-        } else {
-          setMessage('No position data yet.');
-        }
-      } catch {
-        setMessage('Uplink not found or expired.');
-      }
+        if (data && data.lat != null) { moveUserMarker(data.lat, data.lng); map.setView([data.lat, data.lng], Math.max(map.getZoom(), 10)); setMessage('Last: ' + new Date(data.updated).toLocaleTimeString()); }
+        else setMessage('No data yet.');
+      } catch { setMessage('Uplink not found.'); }
     }
-    poll();
-    setInterval(poll, 4000);
+    poll(); setInterval(poll, 4000);
   }
 
   updateShareUI();
-  setMessage('System ready. Initiate uplink to begin.');
+  setMessage('Ready. Click START to begin.');
 })();
 </script>
 </body>
