@@ -162,59 +162,54 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
     // Ghost Link — Demo frontend (no backend required for basic use)
-
-    // ============================================================
-    // MAP API KEY CONFIGURATION
-    // Paste your Mapbox access token here if you want to use Mapbox satellite tiles.
-    // Leave it as the empty string to use the free Esri satellite layer (no key needed).
-    // Get a free token at: https://account.mapbox.com/access-tokens/
-    // ============================================================
-    const MAPBOX_ACCESS_TOKEN = '';  // <-- paste your token here, e.g. 'pk.eyJ1Ijo...'
+    // Fully keyless map — no API keys, tokens, or paid services required.
 
     const map = L.map('map', { zoomControl: false }).setView([40.7128, -74.0060], 13);
 
-    // Dark street layer (always available)
+    // Keyless dark layer (Carto Dark Matter — OSM-compatible, no API key)
+    // Attribution required. Suitable for moderate public use; see Carto terms for high-volume production.
     const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      maxZoom: 19,
+      subdomains: 'abcd'
+    });
+
+    // Keyless standard OpenStreetMap tiles (fallback / alternative)
+    const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19
     });
 
-    // Satellite layer
-    let satelliteLayer;
-    if (MAPBOX_ACCESS_TOKEN) {
-      // Mapbox satellite (requires API key)
-      satelliteLayer = L.tileLayer(
-        'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/{z}/{x}/{y}?access_token={accessToken}',
-        {
-          attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-          maxZoom: 19,
-          tileSize: 512,
-          zoomOffset: -1,
-          accessToken: MAPBOX_ACCESS_TOKEN
-        }
-      );
-    } else {
-      // Free Esri World Imagery (no API key required)
-      satelliteLayer = L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        {
-          attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-          maxZoom: 19
-        }
-      );
-    }
+    // Keyless satellite layer (Esri World Imagery — no API key)
+    const satelliteLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        maxZoom: 19
+      }
+    );
 
-    // Add dark layer by default
+    // Add dark layer by default (matches Ghost Link UI)
     darkLayer.addTo(map);
 
-    // Layer control so you can switch between Dark and Satellite
+    // Layer control — all keyless options
     const baseLayers = {
       'Dark': darkLayer,
+      'Standard': osmLayer,
       'Satellite': satelliteLayer
     };
-    L.control.layers(baseLayers, null, { position: 'topright', collapsed: false }).addTo(map);
+    L.control.layers(baseLayers, null, { position: 'topright', collapsed: true }).addTo(map);
 
     L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // Simple tile-error handling
+    darkLayer.on('tileerror', function() {
+      console.warn('Dark tiles failed to load — switching to standard OSM as fallback');
+      if (map.hasLayer(darkLayer)) {
+        map.removeLayer(darkLayer);
+        osmLayer.addTo(map);
+      }
+    });
 
     let marker = L.circleMarker([40.7128, -74.0060], {
       radius: 10,

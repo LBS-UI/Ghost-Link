@@ -29,29 +29,23 @@ Cloudflare Workers return that exact JSON when no route matches. That is why the
 
 This is the easiest setup for a student/beginner.
 
-## Map layers
+## Map layers (fully keyless — no API key required)
 
-The map includes two base layers you can switch between (control is in the top-right):
+The map uses only free, keyless tile providers. No tokens, accounts, or paid services are needed.
 
-- **Dark** — Carto dark street map (always available).
-- **Satellite** — Uses free Esri World Imagery by default (no API key needed).
+Available layers (switch with the control in the top-right):
 
-### Using your own API key (Mapbox)
+- **Dark** (default) — Carto Dark Matter basemap. OSM-compatible, matches the dark UI. Attribution required.
+- **Standard** — Official OpenStreetMap tiles (`tile.openstreetmap.org`).
+- **Satellite** — Esri World Imagery (keyless).
 
-If you want Mapbox satellite tiles:
+**Notes on usage**
+- All providers are free for normal/moderate use.
+- Always keep the required attribution visible (already included).
+- Public tile servers are not unlimited; very high traffic may need a different solution later.
+- If dark tiles fail to load, the map automatically falls back to standard OSM tiles.
 
-1. Create a free account at [mapbox.com](https://www.mapbox.com) and generate an access token.
-2. Open `ghost-link.html` and find this line near the top of the script:
-   ```javascript
-   const MAPBOX_ACCESS_TOKEN = '';
-   ```
-3. Paste your token inside the quotes:
-   ```javascript
-   const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1Ijo...your-token...';
-   ```
-4. Save and re-upload the file to Cloudflare Pages.
-
-When a token is present, the Satellite layer automatically uses Mapbox. Otherwise it uses the free Esri layer.
+No configuration is required. The map works immediately after you open the page.
 
 ## How to deploy the website (Cloudflare Pages) — easiest path
 
