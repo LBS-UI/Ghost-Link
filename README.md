@@ -1,93 +1,66 @@
-# Ghost Link — Fix for {"error":"Not found","code":"NOT_FOUND"}
+# Ghost Link — Real GPS + Share Links
 
-## Diagnosis (simple explanation)
+This version uses **only real browser GPS** (no simulation) and lets you create a share link so other people can view your live location.
 
-When you open a URL that ends in `.workers.dev` and the entire page shows:
+## Files
 
-```json
-{"error":"Not found","code":"NOT_FOUND"}
-```
+- `ghost-link.html` — frontend (deploy to Cloudflare Pages)
+- `worker.js` — backend API (deploy as a Cloudflare Worker)
+- This README
 
-it means the Cloudflare Worker that is running at that address **does not have a handler for the root path `/`**.
+## 1. Deploy the Worker (backend)
 
-Most likely one of these is true:
+1. Go to Cloudflare dashboard → **Workers & Pages** → **Create** → **Create Worker**.
+2. Name it (example: `ghost-link-api`).
+3. Paste the contents of `worker.js` and deploy.
+4. Go to the Worker’s **Settings** → **Variables** → **KV Namespace Bindings**.
+5. Click **Add binding**:
+   - Variable name: `LOCATIONS`
+   - Create a new KV namespace (example: `ghost-link-locations`) and select it.
+6. Save and redeploy if prompted.
+7. Copy the Worker URL (example: `https://ghost-link-api.yourname.workers.dev`).
 
-- The Worker was written only as an API (it only responds to `/api/...` routes).
-- There is no `fetch` handler that returns HTML for `/`.
-- The frontend file was never deployed or attached to this Worker.
-- You are visiting the backend Worker URL instead of a Pages website URL.
+## 2. Configure the frontend
 
-Cloudflare Workers return that exact JSON when no route matches. That is why the whole browser window shows the error instead of a website.
+1. Open `ghost-link.html` in a text editor.
+2. Find this line near the top of the script:
+   ```javascript
+   const API_BASE = '';
+   ```
+3. Paste your Worker URL inside the quotes (no trailing slash):
+   ```javascript
+   const API_BASE = 'https://ghost-link-api.yourname.workers.dev';
+   ```
+4. Save the file.
 
-## Recommended simple architecture
+## 3. Deploy the frontend
 
-| Part          | What to use              | File              | Where to deploy          |
-|---------------|--------------------------|-------------------|--------------------------|
-| Frontend      | Single HTML file         | `ghost-link.html` | Cloudflare Pages         |
-| Backend (optional) | Cloudflare Worker   | `worker.js`       | Workers & Pages          |
-| Database      | Not required for demo    | —                 | Only add D1 later if needed |
+1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** → **Upload assets**.
+2. Upload `ghost-link.html` (or rename it to `index.html` first).
+3. Open the `*.pages.dev` URL you receive.
 
-This is the easiest setup for a student/beginner.
+## How to use
 
-## Map layers (fully keyless — no API key required)
+- Click **Start Sharing**. The browser will ask for location permission — allow it.
+- A share link appears. Click it to copy, then send it to someone.
+- They open the link and see your live location on the map (updates every few seconds).
+- Click **Stop** to end sharing. The link stops working.
+- **Pause** / **Resume** temporarily freeze updates.
 
-The map uses only free, keyless tile providers. No tokens, accounts, or paid services are needed.
+## Privacy notes
 
-Available layers (switch with the control in the top-right):
-
-- **Dark** (default) — Carto Dark Matter basemap. OSM-compatible, matches the dark UI. Attribution required.
-- **Standard** — Official OpenStreetMap tiles (`tile.openstreetmap.org`).
-- **Satellite** — Esri World Imagery (keyless).
-
-**Notes on usage**
-- All providers are free for normal/moderate use.
-- Always keep the required attribution visible (already included).
-- Public tile servers are not unlimited; very high traffic may need a different solution later.
-- If dark tiles fail to load, the map automatically falls back to standard OSM tiles.
-
-No configuration is required. The map works immediately after you open the page.
-
-## How to deploy the website (Cloudflare Pages) — easiest path
-
-1. Go to the Cloudflare dashboard → **Workers & Pages**.
-2. Click **Create** → **Pages** → **Upload assets**.
-3. Give the project a name (for example `ghost-link`).
-4. Upload **only** the file `ghost-link.html` (you can rename it to `index.html` before uploading if you prefer).
-5. After the deploy finishes, Cloudflare will give you a URL like `https://ghost-link.pages.dev`.
-6. Open that URL. You should see the Ghost Link map and controls instead of the JSON error.
-
-You can also drag-and-drop the HTML file into the Pages upload screen.
-
-## How to use the optional Worker
-
-Only do this if you want the `.workers.dev` URL itself to respond to `/`.
-
-1. Create a new Worker in the dashboard.
-2. Paste the contents of `worker.js`.
-3. Deploy.
-4. Note: the example Worker currently returns a short placeholder HTML. For a real site it is still better to use Pages for the frontend.
+- Location is only sent while sharing is active.
+- The share link is public to anyone who has it (treat it like a private link).
+- Data expires after 24 hours in KV.
+- You can stop sharing at any time.
 
 ## Testing checklist
 
-- [ ] Open the Pages URL (not the workers.dev URL).
-- [ ] You see a dark map and the Ghost Link control panel.
-- [ ] Network status shows “Online”.
-- [ ] Click **Start Sharing** → status changes and the marker moves (demo) or asks for location permission (real GPS).
-- [ ] **Pause**, **Resume**, and **Stop** work.
-- [ ] Unknown paths do not show a raw JSON error across the whole page.
+- [ ] Worker deployed and KV binding named `LOCATIONS` is set.
+- [ ] `API_BASE` in the HTML points to the Worker URL.
+- [ ] Start Sharing asks for GPS permission and the marker moves with you.
+- [ ] Share link appears and can be copied.
+- [ ] Opening the share link in another browser/tab shows the location.
+- [ ] Stop ends the session.
 
-## Remaining tasks (need your Cloudflare account)
-
-- Upload `ghost-link.html` to Cloudflare Pages (steps above).
-- If you already have a Worker, either add a root `/` handler that returns the HTML, or stop using the workers.dev URL as the main website address.
-- Later, if you want real multi-user sharing, accounts, and private invites, you can add a D1 database and expand the Worker. The current version is intentionally a working demo that does not require a backend.
-
-## Important notes
-
-- This version runs in **clearly labeled DEMO MODE**.
-- Real location is only used after you explicitly grant the browser permission.
-- You can stop sharing at any time.
-- No hidden tracking is added.
-- No secrets or account details are included.
-
-Once the Pages site is live, the original `{"error":"Not found","code":"NOT_FOUND"}` problem is solved because you are no longer loading a Worker that has no frontend handler.
+If the share link does not work, double-check the KV binding name and that `API_BASE` has no trailing slash.
