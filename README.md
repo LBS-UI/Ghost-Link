@@ -29,11 +29,29 @@ Cloudflare Workers return that exact JSON when no route matches. That is why the
 
 This is the easiest setup for a student/beginner.
 
-## Files included
+## Map layers
 
-- `ghost-link.html` — Complete dark-themed, mobile-friendly website with Leaflet map and sharing controls. Works in demo mode (simulated movement) and can use real browser GPS when you allow it.
-- `worker.js` — Optional Worker example that shows how to serve a response for `/` and return proper API errors.
-- This README.
+The map includes two base layers you can switch between (control is in the top-right):
+
+- **Dark** — Carto dark street map (always available).
+- **Satellite** — Uses free Esri World Imagery by default (no API key needed).
+
+### Using your own API key (Mapbox)
+
+If you want Mapbox satellite tiles:
+
+1. Create a free account at [mapbox.com](https://www.mapbox.com) and generate an access token.
+2. Open `ghost-link.html` and find this line near the top of the script:
+   ```javascript
+   const MAPBOX_ACCESS_TOKEN = '';
+   ```
+3. Paste your token inside the quotes:
+   ```javascript
+   const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1Ijo...your-token...';
+   ```
+4. Save and re-upload the file to Cloudflare Pages.
+
+When a token is present, the Satellite layer automatically uses Mapbox. Otherwise it uses the free Esri layer.
 
 ## How to deploy the website (Cloudflare Pages) — easiest path
 
